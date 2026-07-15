@@ -1,0 +1,13 @@
+.{
+    .name = .peachfuzz,
+    .version = "0.0.0",
+    .fingerprint = 0xad3574b7b55e81d3,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{},
+    .paths = .{
+        "3rdparty",
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}

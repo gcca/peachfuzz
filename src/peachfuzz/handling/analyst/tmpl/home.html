@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en" data-theme="cmyk">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Peachfuzz</title>
+    <script>
+      document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'cmyk');
+    </script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@5/themes.css" rel="stylesheet" type="text/css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet" />
+    <style>
+      body { font-family: 'JetBrains Mono', monospace; font-weight: 300; }
+      #sidebar { width: 16rem; }
+      #sidebar-resizer { display: none; }
+      body.sidebar-resizing { cursor: col-resize; user-select: none; }
+      body.sidebar-resizing #sidebar-resizer > div { opacity: 0.5; }
+      @media (min-width: 64rem) {
+        #sidebar { width: var(--sidebar-width, 16rem); }
+        #sidebar-resizer { display: block; }
+      }
+    </style>
+    <script>
+      function setTheme(name) {
+        document.documentElement.setAttribute('data-theme', name);
+        localStorage.setItem('theme', name);
+        document.querySelectorAll('[data-theme-btn]').forEach(function(btn) {
+          btn.querySelector('svg').classList.toggle('invisible', btn.dataset.themeBtn !== name);
+        });
+      }
+
+      function initSidebarResize() {
+        const sidebar = document.getElementById('sidebar');
+        const resizer = document.getElementById('sidebar-resizer');
+        const minWidth = 224;
+        const maxWidth = 512;
+        const defaultWidth = 256;
+        let pointerId = null;
+        let startX = 0;
+        let startWidth = 0;
+
+        function setWidth(width, persist) {
+          const nextWidth = Math.min(maxWidth, Math.max(minWidth, Math.round(width)));
+          document.documentElement.style.setProperty('--sidebar-width', nextWidth + 'px');
+          resizer.setAttribute('aria-valuenow', String(nextWidth));
+          if (persist) localStorage.setItem('sidebar-width', String(nextWidth));
+        }
+
+        const savedWidth = Number(localStorage.getItem('sidebar-width'));
+        setWidth(Number.isFinite(savedWidth) && savedWidth > 0 ? savedWidth : defaultWidth, false);
+
+        resizer.addEventListener('pointerdown', function(event) {
+          if (event.button !== 0 || !window.matchMedia('(min-width: 64rem)').matches) return;
+          pointerId = event.pointerId;
+          startX = event.clientX;
+          startWidth = sidebar.getBoundingClientRect().width;
+          resizer.setPointerCapture(pointerId);
+          document.body.classList.add('sidebar-resizing');
+          event.preventDefault();
+        });
+
+        resizer.addEventListener('pointermove', function(event) {
+          if (event.pointerId !== pointerId) return;
+          setWidth(startWidth + event.clientX - startX, false);
+        });
+
+        function finishResize(event) {
+          if (event.pointerId !== pointerId) return;
+          pointerId = null;
+          document.body.classList.remove('sidebar-resizing');
+          localStorage.setItem('sidebar-width', String(Math.round(sidebar.getBoundingClientRect().width)));
+        }
+
+        resizer.addEventListener('pointerup', finishResize);
+        resizer.addEventListener('pointercancel', finishResize);
+        resizer.addEventListener('dblclick', function() {
+          setWidth(defaultWidth, true);
+        });
+        resizer.addEventListener('keydown', function(event) {
+          if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+          const direction = event.key === 'ArrowLeft' ? -1 : 1;
+          setWidth(sidebar.getBoundingClientRect().width + direction * 16, true);
+          event.preventDefault();
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        setTheme(localStorage.getItem('theme') || 'cmyk');
+        initSidebarResize();
+      });
+    </script>
+  </head>
+  <body class="min-h-screen bg-base-200">
+    <div class="drawer lg:drawer-open">
+      <input id="sidebar-drawer" type="checkbox" class="drawer-toggle" />
+      <div class="drawer-content flex flex-col">
+        <div class="navbar bg-base-100 shadow-md lg:hidden">
+          <div class="flex-none">
+            <label for="sidebar-drawer" class="btn btn-square btn-ghost">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-6 w-6 stroke-current">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+              </svg>
+            </label>
+          </div>
+          <div class="flex-1">
+            <span class="text-xl font-bold">Peachfuzz</span>
+          </div>
+        </div>
+
+        <main class="flex-1 p-6">
+          <div class="mx-auto max-w-7xl">
+            {{^is_page}}
+            <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h1 class="text-4xl font-bold">Workspace</h1>
+                <p class="mt-2 opacity-60">Active Peachfuzz surface</p>
+              </div>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <div class="stat bg-base-100 shadow">
+                <div class="stat-figure text-primary">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div class="stat-title">Workspace</div>
+                <div class="stat-value">Live</div>
+                <div class="stat-desc">Ready for review</div>
+              </div>
+
+              <div class="stat bg-base-100 shadow">
+                <div class="stat-figure text-secondary">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </div>
+                <div class="stat-title">Signals</div>
+                <div class="stat-value">3</div>
+                <div class="stat-desc">Focused panels</div>
+              </div>
+
+              <div class="stat bg-base-100 shadow">
+                <div class="stat-figure text-accent">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <div class="stat-title">Records</div>
+                <div class="stat-value">Local</div>
+                <div class="stat-desc">Workspace data</div>
+              </div>
+
+              <div class="stat bg-base-100 shadow">
+                <div class="stat-figure text-info">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                </div>
+                <div class="stat-title">Health</div>
+                <div class="stat-value">OK</div>
+                <div class="stat-desc">Service responsive</div>
+              </div>
+            </div>
+
+            <section class="mt-8">
+              <div class="mb-4">
+                <h2 class="text-2xl font-bold">Areas</h2>
+                <p class="mt-1 opacity-60">Available workspace areas</p>
+              </div>
+              <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                {{{ cards }}}
+              </div>
+            </section>
+            {{/is_page}}
+            {{#is_page}}
+            <section>
+              <div class="mb-4">
+                <h2 class="text-2xl font-bold">{{ page_title }}</h2>
+              </div>
+              <div class="card bg-base-100 shadow">
+                <div class="card-body">
+                  {{{ page_content }}}
+                </div>
+              </div>
+            </section>
+            {{/is_page}}
+          </div>
+        </main>
+      </div>
+
+      <div class="drawer-side z-10">
+        <label for="sidebar-drawer" class="drawer-overlay"></label>
+        <aside id="sidebar" class="relative flex h-full flex-col bg-base-100">
+          <div id="sidebar-resizer" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" aria-valuemin="224" aria-valuemax="512" aria-valuenow="256" tabindex="0" class="group absolute inset-y-0 right-0 z-20 w-2 cursor-col-resize touch-none">
+            <div class="mx-auto h-full w-0.5 bg-primary opacity-0 transition-opacity group-hover:opacity-50 group-focus:opacity-50"></div>
+          </div>
+          <div class="flex h-16 items-center gap-2 border-b border-base-300 px-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-8 w-8 text-primary">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75h16.5v16.5H3.75V3.75zM8.25 8.25h7.5v7.5h-7.5v-7.5z" />
+            </svg>
+            <span class="text-xl font-bold">Peachfuzz</span>
+          </div>
+
+          <nav class="flex-1 overflow-y-auto p-4">
+            <ul class="menu gap-2">
+              <li>
+                <a class="{{^is_page}}active{{/is_page}}" href="/peachfuzz/analyst">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25A2.25 2.25 0 018.25 10.5H6A2.25 2.25 0 013.75 8.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25A2.25 2.25 0 0113.5 8.25V6zM13.5 15.75A2.25 2.25 0 0115.75 13.5H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                  </svg>
+                  Dashboard
+                </a>
+              </li>
+              {{^is_authenticated}}
+              <li>
+                <a href="/peachfuzz/auth/signin">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-5 w-5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m-3-6l3 3m0 0l-3 3m3-3H3" />
+                  </svg>
+                  Sign in
+                </a>
+              </li>
+              {{/is_authenticated}}
+              <div class="divider my-2">Pages</div>
+
+              {{{ page_tree }}}
+            </ul>
+          </nav>
+
+          <div class="border-t border-base-300 p-4">
+            <div class="dropdown dropdown-top w-full">
+              <div tabindex="0" role="button" class="flex items-center gap-3 cursor-pointer rounded-lg p-1 hover:bg-base-200 transition-colors">
+                <div class="avatar placeholder shrink-0">
+                  <div class="grid size-10 place-items-center rounded-full bg-primary text-primary-content">
+                    <span class="leading-none">PF</span>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-semibold truncate">{{#is_authenticated}}{{username}}{{/is_authenticated}}{{^is_authenticated}}peachfuzz{{/is_authenticated}}</div>
+                  <div class="text-xs opacity-60 truncate">{{#is_authenticated}}{{role}}{{/is_authenticated}}{{^is_authenticated}}workspace{{/is_authenticated}}</div>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4 opacity-50">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+                </svg>
+              </div>
+              <ul tabindex="-1" class="dropdown-content menu bg-base-100 rounded-box z-50 w-56 p-2 shadow-lg border border-base-300 mb-2">
+                <li>
+                  <details>
+                    <summary>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+                      </svg>
+                      Theme
+                    </summary>
+                    <ul class="max-h-48 overflow-y-auto">
+                      <li><button class="gap-3 px-2" data-theme-btn="light" onclick="setTheme('light')"><div data-theme="light" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Light</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="dark" onclick="setTheme('dark')"><div data-theme="dark" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Dark</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="cupcake" onclick="setTheme('cupcake')"><div data-theme="cupcake" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Cupcake</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="bumblebee" onclick="setTheme('bumblebee')"><div data-theme="bumblebee" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Bumblebee</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="emerald" onclick="setTheme('emerald')"><div data-theme="emerald" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Emerald</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="corporate" onclick="setTheme('corporate')"><div data-theme="corporate" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Corporate</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="synthwave" onclick="setTheme('synthwave')"><div data-theme="synthwave" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Synthwave</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="retro" onclick="setTheme('retro')"><div data-theme="retro" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Retro</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="cyberpunk" onclick="setTheme('cyberpunk')"><div data-theme="cyberpunk" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Cyberpunk</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="valentine" onclick="setTheme('valentine')"><div data-theme="valentine" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Valentine</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="halloween" onclick="setTheme('halloween')"><div data-theme="halloween" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Halloween</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="garden" onclick="setTheme('garden')"><div data-theme="garden" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Garden</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="forest" onclick="setTheme('forest')"><div data-theme="forest" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Forest</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="aqua" onclick="setTheme('aqua')"><div data-theme="aqua" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Aqua</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="lofi" onclick="setTheme('lofi')"><div data-theme="lofi" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Lo-Fi</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="pastel" onclick="setTheme('pastel')"><div data-theme="pastel" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Pastel</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="fantasy" onclick="setTheme('fantasy')"><div data-theme="fantasy" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Fantasy</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="wireframe" onclick="setTheme('wireframe')"><div data-theme="wireframe" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Wireframe</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="black" onclick="setTheme('black')"><div data-theme="black" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Black</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="luxury" onclick="setTheme('luxury')"><div data-theme="luxury" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Luxury</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="dracula" onclick="setTheme('dracula')"><div data-theme="dracula" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Dracula</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="cmyk" onclick="setTheme('cmyk')"><div data-theme="cmyk" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">CMYK</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="autumn" onclick="setTheme('autumn')"><div data-theme="autumn" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Autumn</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="business" onclick="setTheme('business')"><div data-theme="business" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Business</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="acid" onclick="setTheme('acid')"><div data-theme="acid" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Acid</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="lemonade" onclick="setTheme('lemonade')"><div data-theme="lemonade" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Lemonade</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="night" onclick="setTheme('night')"><div data-theme="night" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Night</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="coffee" onclick="setTheme('coffee')"><div data-theme="coffee" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Coffee</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="winter" onclick="setTheme('winter')"><div data-theme="winter" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Winter</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="dim" onclick="setTheme('dim')"><div data-theme="dim" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Dim</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="nord" onclick="setTheme('nord')"><div data-theme="nord" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Nord</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="sunset" onclick="setTheme('sunset')"><div data-theme="sunset" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Sunset</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="caramellatte" onclick="setTheme('caramellatte')"><div data-theme="caramellatte" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Caramel Latte</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="abyss" onclick="setTheme('abyss')"><div data-theme="abyss" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Abyss</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                      <li><button class="gap-3 px-2" data-theme-btn="silk" onclick="setTheme('silk')"><div data-theme="silk" class="bg-base-100 grid shrink-0 grid-cols-2 gap-0.5 rounded p-1 shadow-sm"><div class="bg-base-content size-1 rounded-full"></div><div class="bg-primary size-1 rounded-full"></div><div class="bg-secondary size-1 rounded-full"></div><div class="bg-accent size-1 rounded-full"></div></div><span class="flex-1 text-left">Silk</span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="invisible h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></button></li>
+                    </ul>
+                  </details>
+                </li>
+                {{#is_authenticated}}
+                <li>
+                  <a href="/peachfuzz/auth/signout" class="text-error">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="h-4 w-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    </svg>
+                    Sign out
+                  </a>
+                </li>
+                {{/is_authenticated}}
+              </ul>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </body>
+</html>
