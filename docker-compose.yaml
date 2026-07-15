@@ -1,0 +1,41 @@
+services:
+  peachfuzz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: execute
+    depends_on:
+      urmom:
+        condition: service_healthy
+    image: peachfuzz:latest
+    environment:
+      TZ: UTC
+      DBPATH: /app/data/peachfuzz.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - db:/app/data
+    restart: unless-stopped
+
+  urmom:
+    image: urmom:latest
+    environment:
+      TZ: UTC
+      DB_URL: /app/data/urmom.db
+      PORT: "50051"
+      LOAD_SAMPLE_DATA: "1"
+    ports:
+      - "50051:50051"
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 $${PORT}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - urmom-data:/app/data
+      - ./res/urmom-sample_data.sql:/app/fixtures/sample-data.sql:ro
+    restart: unless-stopped
+
+volumes:
+  db:
+  urmom-data:

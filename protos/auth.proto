@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package urmom.v1;
+
+option go_package = "github.com/gcca/urmom/clients/go/auth/v1;authv1";
+
+service AuthService {
+  rpc UserInfo(UserInfoRequest) returns (UserInfoResponse);
+
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+}
+
+message UserInfo {
+  bool is_active = 1;
+  repeated string apps = 2;
+}
+
+// rpc: UserInfo
+
+message UserInfoRequest {
+  string username = 1;
+}
+
+message UserInfoResponse {
+  UserInfo userinfo = 1;
+}
+
+// rpc: Authenticate
+
+message AuthenticateRequest {
+  string username = 1;
+  string password = 2;
+}
+
+message AuthenticateResponse {
+  bool authenticated = 1;
+  UserInfo userinfo = 2;
+}

@@ -1,0 +1,7 @@
+.zig-cache
+zig-out
+zig-pkg
+_build
+*.db
+*.db-wal
+*.db-shm

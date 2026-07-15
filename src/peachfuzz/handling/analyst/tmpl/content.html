@@ -1,0 +1,76 @@
+{{^is_page}}
+<div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+  <div>
+    <h1 class="text-4xl font-bold">Workspace</h1>
+    <p class="mt-2 opacity-60">Active {{app_name}} surface</p>
+  </div>
+</div>
+
+<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+  <div class="stat bg-base-100 shadow">
+    <div class="stat-figure text-primary">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <div class="stat-title">Workspace</div>
+    <div class="stat-value">Live</div>
+    <div class="stat-desc">Ready for review</div>
+  </div>
+
+  <div class="stat bg-base-100 shadow">
+    <div class="stat-figure text-secondary">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+    </div>
+    <div class="stat-title">Signals</div>
+    <div class="stat-value">3</div>
+    <div class="stat-desc">Focused panels</div>
+  </div>
+
+  <div class="stat bg-base-100 shadow">
+    <div class="stat-figure text-accent">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+    </div>
+    <div class="stat-title">Records</div>
+    <div class="stat-value">Local</div>
+    <div class="stat-desc">Workspace data</div>
+  </div>
+
+  <div class="stat bg-base-100 shadow">
+    <div class="stat-figure text-info">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block h-8 w-8 stroke-current">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      </svg>
+    </div>
+    <div class="stat-title">Health</div>
+    <div class="stat-value">OK</div>
+    <div class="stat-desc">Service responsive</div>
+  </div>
+</div>
+
+<section class="mt-8">
+  <div class="mb-4">
+    <h2 class="text-2xl font-bold">Areas</h2>
+    <p class="mt-1 opacity-60">Available workspace areas</p>
+  </div>
+  <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+    {{{ cards }}}
+  </div>
+</section>
+{{/is_page}}
+{{#is_page}}
+<section>
+  <div class="mb-4">
+    <h2 class="text-2xl font-bold">{{ page_title }}</h2>
+  </div>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      {{{ page_content }}}
+    </div>
+  </div>
+</section>
+{{/is_page}}

@@ -1,0 +1,85 @@
+(rule
+ (target peachfuzz_add_s3_source.ml)
+ (deps peachfuzz-add_s3_source.ml)
+ (action
+  (copy %{deps} %{target})))
+
+(executable
+ (name peachfuzz_add_s3_source)
+ (public_name peachfuzz-add_s3_source)
+ (package peachfuzz)
+ (modules peachfuzz_add_s3_source)
+ (libraries sqlite3))
+
+(rule
+ (target peachfuzz_show_sources.ml)
+ (deps peachfuzz-show_sources.ml)
+ (action
+  (copy %{deps} %{target})))
+
+(executable
+ (name peachfuzz_show_sources)
+ (public_name peachfuzz-show_sources)
+ (package peachfuzz)
+ (modules peachfuzz_show_sources)
+ (libraries sqlite3))
+
+(rule
+  (target peachfuzz_show_s3_sources.ml)
+  (deps peachfuzz-show_s3_sources.ml)
+  (action (copy %{deps} %{target})))
+
+ (executable
+  (name peachfuzz_show_s3_sources)
+  (public_name peachfuzz-show_s3_sources)
+  (package peachfuzz)
+  (modules peachfuzz_show_s3_sources)
+  (libraries sqlite3))
+
+(rule
+  (target peachfuzz_cor_s3_source.ml)
+  (deps peachfuzz-cor_s3_source.ml)
+  (action (copy %{deps} %{target})))
+
+ (executable
+  (name peachfuzz_cor_s3_source)
+  (public_name peachfuzz-cor_s3_source)
+  (package peachfuzz)
+  (modules peachfuzz_cor_s3_source)
+  (libraries sqlite3 ctypes ctypes-foreign))
+
+(rule
+  (target peachfuzz_tree.ml)
+  (deps peachfuzz-tree.ml)
+  (action (copy %{deps} %{target})))
+
+ (executable
+  (name peachfuzz_tree)
+  (public_name peachfuzz-tree)
+  (package peachfuzz)
+  (modules peachfuzz_tree)
+  (libraries sqlite3))
+
+(rule
+  (target peachfuzz_remove_source.ml)
+  (deps peachfuzz-remove_source.ml)
+  (action (copy %{deps} %{target})))
+
+(executable
+  (name peachfuzz_remove_source)
+  (public_name peachfuzz-remove_source)
+  (package peachfuzz)
+  (modules peachfuzz_remove_source)
+  (libraries sqlite3))
+
+(rule
+  (target peachfuzz_remove_folder.ml)
+  (deps peachfuzz-remove_folder.ml)
+  (action (copy %{deps} %{target})))
+
+(executable
+  (name peachfuzz_remove_folder)
+  (public_name peachfuzz-remove_folder)
+  (package peachfuzz)
+  (modules peachfuzz_remove_folder)
+  (libraries sqlite3))
