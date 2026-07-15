@@ -1,0 +1,60 @@
+{{^is_page}}
+<div id="dashboard-launchpad" class="mx-auto w-full max-w-7xl">
+  <header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary">{{app_name}}</p>
+      <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">Inicio</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 opacity-65 sm:text-base">Encuentra los reportes de ventas, afluencia y gestión disponibles en tu espacio de trabajo.</p>
+    </div>
+    <div class="flex flex-wrap gap-2 text-xs" aria-label="Resumen del catálogo">
+      <span class="badge badge-outline gap-1.5">{{report_count}} reportes</span>
+      <span class="badge badge-outline gap-1.5">{{area_count}} áreas</span>
+      <span class="badge badge-outline gap-1.5">{{source_count}} fuentes</span>
+    </div>
+  </header>
+
+  <div class="mt-7">
+    <label class="input input-lg w-full border-base-300 bg-base-100 shadow-sm focus-within:border-primary focus-within:outline-0">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5 opacity-50" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 105.197 5.197a7.5 7.5 0 0010.606 10.606z" /></svg>
+      <input id="dashboard-search" type="search" class="grow" placeholder="Buscar por reporte, descripción o área…" autocomplete="off" aria-controls="dashboard-report-list" />
+      <kbd class="kbd kbd-sm hidden opacity-50 sm:inline-flex">/</kbd>
+    </label>
+  </div>
+
+  <section class="mt-9" aria-labelledby="recent-heading">
+    <div class="mb-4 flex items-end justify-between gap-4">
+      <div><h2 id="recent-heading" class="text-xl font-bold">Usados recientemente</h2><p class="mt-1 text-sm opacity-60">Acceso rápido a tus últimos reportes.</p></div>
+      <button id="dashboard-clear-recents" type="button" class="btn btn-ghost btn-xs hidden">Limpiar</button>
+    </div>
+    <div id="dashboard-recent-list" class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"></div>
+    <p id="dashboard-recent-empty" class="rounded-box border border-dashed border-base-300 bg-base-100/50 px-5 py-6 text-sm opacity-60">Abre un reporte y aparecerá aquí para tu próxima visita.</p>
+  </section>
+
+  <section class="mt-10" aria-labelledby="areas-heading">
+    <div class="mb-4"><h2 id="areas-heading" class="text-xl font-bold">Explorar por área</h2><p class="mt-1 text-sm opacity-60">Selecciona un área para filtrar el catálogo.</p></div>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{{{ area_cards }}}</div>
+  </section>
+
+  <section id="dashboard-all-reports" class="mt-10 scroll-mt-6" aria-labelledby="all-reports-heading">
+    <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div><h2 id="all-reports-heading" class="text-xl font-bold">Todos los reportes</h2><p id="dashboard-result-count" class="mt-1 text-sm opacity-60" aria-live="polite"></p></div>
+      <button id="dashboard-reset-filter" type="button" class="btn btn-ghost btn-sm hidden">Ver todos</button>
+    </div>
+    <ul id="dashboard-report-list" class="overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-sm">{{{ report_rows }}}</ul>
+    <div id="dashboard-no-results" class="hidden rounded-box border border-dashed border-base-300 bg-base-100/50 px-5 py-10 text-center"><p class="font-semibold">No encontramos reportes</p><p class="mt-1 text-sm opacity-60">Prueba con otro nombre, descripción o área.</p></div>
+    <div class="mt-4 text-center"><button id="dashboard-show-all" type="button" class="btn btn-outline btn-sm hidden"></button></div>
+  </section>
+</div>
+{{/is_page}}
+{{#is_page}}
+<section>
+  <div class="mb-4">
+    <h1 class="text-2xl font-bold">{{ page_title }}</h1>
+  </div>
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      {{{ page_content }}}
+    </div>
+  </div>
+</section>
+{{/is_page}}

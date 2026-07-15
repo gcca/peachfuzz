@@ -1,0 +1,11 @@
+.git
+.github
+.zig-cache
+zig-out
+zig-pkg
+data
+db/fixtures
+CTX.md
+*.db
+*.db-shm
+*.db-wal
