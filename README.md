@@ -312,27 +312,61 @@ Cookie: HttpOnly, `Path=/peachfuzz`, `SameSite=Lax`, seven-day TTL. `Secure` is 
 
 ---
 
-## Repository map
+## FS Structure
 
 ```
 .
-├── build.zig / build.zig.zon   # exe, lib, cmd tools, tests
-├── cmd/                        # datamark-clone, datamark-flush
+├── README.md
+├── build.zig
+├── build.zig.zon
+├── 3rdparty/                          # vendored headers
+│   ├── httplib.h
+│   └── mustache.hpp
+├── cmd/
+│   ├── peachfuzz-change_user_password.lisp
+│   ├── peachfuzz-cmd_datamark-clone.zig
+│   └── peachfuzz-cmd_datamark-flush.zig
+├── data/                              # gitignored runtime DBs & caches
+│   ├── peachfuzz.db                   # app DB
+│   ├── datamark.db                    # warehouse
+│   └── datamark/source/<name>/…       # local cache for cloneable sources
 ├── db/
-│   ├── migrations/             # single init migration (edit in place pre-release)
-│   ├── fixtures/sample-data.sql
-│   └── schema.sql              # snapshot only — not the source of truth
-├── data/                       # gitignored runtime DBs & caches
-├── 3rdparty/                   # vendored headers
+│   ├── fixtures/
+│   │   └── sample-data.sql
+│   ├── migrations/
+│   │   └── 20260715023401_init.sql    # single migration (edit in place pre-release)
+│   └── schema.sql                     # snapshot only — not source of truth
 └── src/
-    ├── main.zig / root.zig     # server entry + library re-exports
-    ├── (HTTP / template / app-DB wrappers + shims)
+    ├── main.zig                       # server entry
+    ├── root.zig                       # library re-exports
+    ├── httplib.zig
+    ├── httplibshim.cpp / .hpp
+    ├── mustache.zig
+    ├── mustacheshim.cpp / .hpp
+    ├── sqlite3.zig
     └── peachfuzz/
-        ├── engine/             # runtime + page-engine backend
+        ├── engine/
+        │   ├── runtime.zig            # engine dispatch
+        │   ├── backend.hpp
+        │   └── backend.cpp            # page-engine child process
         └── handling/
-            ├── auth/           # sign-in, SSO, session, roles
-            ├── home/           # post-login role redirect
-            └── analyst/        # dashboard shell + pages
+            ├── auth/
+            │   ├── routes.zig
+            │   ├── handlers/          # index, signin, signout, o365-*
+            │   ├── tmpl/              # signin, o365-signin
+            │   ├── utils.zig
+            │   ├── session.zig
+            │   ├── securing.zig
+            │   └── accessly.zig       # roles
+            ├── home/
+            │   ├── routes.zig
+            │   └── handlers/
+            │       └── home-get.zig   # role dispatcher
+            └── analyst/
+                ├── routes.zig
+                ├── handlers/          # analyst-get, page-get
+                ├── render.zig
+                └── tmpl/              # home shell, cards, page tree
 ```
 
 ---
