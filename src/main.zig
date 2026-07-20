@@ -13,7 +13,7 @@ pub fn main(init: std.process.Init) !void {
     }
 
     sqlite3.initdb(peachfuzz.handling.auth.session.dbPath) catch |err| {
-        std.log.warn("could not enable SQLite WAL journal mode: {s}", .{@errorName(err)});
+        std.log.warn("could not initialize SQLite: {s}", .{@errorName(err)});
     };
     peachfuzz.conf.load();
 

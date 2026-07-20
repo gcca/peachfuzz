@@ -1,0 +1,30 @@
+app = 'peachfuzz'
+primary_region = 'ord'
+
+[build]
+  image = 'ghcr.io/gcca/peachfuzz:latest'
+
+[env]
+  DB_URL = '/app/data/peachfuzz.db'
+  TZ = 'UTC'
+
+[[mounts]]
+  source = 'peachfuzz_data'
+  destination = '/app/data'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = 'requests'
+    hard_limit = 100
+    soft_limit = 80
+
+[[vm]]
+  size = 'shared-cpu-1x'
+  memory = '256mb'
+  cpus = 1
