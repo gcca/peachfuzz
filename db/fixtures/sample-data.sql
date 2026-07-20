@@ -1,6 +1,6 @@
 INSERT INTO auth_user (username, password, role, is_active) VALUES
   ('admin', X'faf15c75083336b7b507dc98d04e404ffd6428e94d74daef23711183e730f05c14e48c9a4fbfe37df516b7e37638aaa4', 1, 1),
-  ('jill.valentine', X'79d3be2447384362df62dc9ad50fc2ef03af14625d2ee7fccf4e5a50b825898ba12646e1f5e3e47bf99dd79e1c6287c9', 1, 1),
+  ('jill.valentine', X'79d3be2447384362df62dc9ad50fc2ef03af14625d2ee7fccf4e5a50b825898ba12646e1f5e3e47bf99dd79e1c6287c9', 3, 1),
   ('chris.redfield', X'2d6026464b5c8c723b082472fb4d37c4cd90bbf1e927b4367ce084c859ca709563b90a4c450118dc72aba0af830e865e', 1, 1),
   ('barry.burton', X'946eac5042329a8493e85bece6bb27d8b3a67f2e9382ebca6ff1848b44d43c4e3bb39228b5991611628aef776bf62bb3', 2, 1),
   ('rebecca.chambers', X'32b977fbf8b08f9de76d99719ad7a01bdd9191e31d5085c422467432e78f233399235d0aede4b19576e8c4b2d49d3768', 2, 1),
