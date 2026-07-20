@@ -16,4 +16,4 @@ pub const engine = struct {
     pub const runtime = @import("peachfuzz/engine/runtime.zig");
 };
 
-pub const sqlite3 = @import("sqlite3");
+pub const conf = @import("peachfuzz/conf.zig");

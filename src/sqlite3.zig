@@ -86,8 +86,14 @@ pub fn initdb(filename: [:0]const u8) OpenError!void {
     var stmt = try db.stmt("PRAGMA journal_mode = WAL;");
     defer stmt.deinit();
 
-    if ((try stmt.step()) != .row) return OpenError.WalFailed;
-    if (!std.ascii.eqlIgnoreCase(stmt.columnText(0), "wal")) return OpenError.WalFailed;
+    if ((try stmt.step()) != .row) {
+        std.log.warn("could not enable SQLite WAL journal mode (on stmt.step): filename={s}", .{filename});
+        return OpenError.WalFailed;
+    }
+    if (!std.ascii.eqlIgnoreCase(stmt.columnText(0), "wal")) {
+        std.log.warn("could not enable SQLite WAL journal mode (on stmt.columnText): filename={s}", .{filename});
+        return OpenError.WalFailed;
+    }
 }
 
 pub const Stmt = struct {

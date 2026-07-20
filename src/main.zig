@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const sqlite3 = @import("sqlite3");
 const httplib = @import("httplib");
 const peachfuzz = @import("peachfuzz");
 
@@ -11,9 +12,10 @@ pub fn main(init: std.process.Init) !void {
         std.log.info("arg: {s}", .{arg});
     }
 
-    peachfuzz.sqlite3.initdb(peachfuzz.handling.auth.session.dbPath) catch |err| {
+    sqlite3.initdb(peachfuzz.handling.auth.session.dbPath) catch |err| {
         std.log.warn("could not enable SQLite WAL journal mode: {s}", .{@errorName(err)});
     };
+    peachfuzz.conf.load();
 
     var server = httplib.Server.init();
     defer server.deinit();

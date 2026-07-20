@@ -219,6 +219,7 @@ pub fn renderAnalyst(allocator: std.mem.Allocator, page: ?Page, user: ?CurrentUs
     var data = mustache.Data.init(allocator);
     defer data.deinit();
     const cardsZ = allocator.dupeZ(u8, cardsHtml.items) catch @panic("OOM");
+    data.setString("app_name", peachfuzz.conf.settings.appname);
     data.setString("cards", cardsZ);
     data.setString("page_tree", renderPageTree(allocator));
     data.setBool("is_page", page != null);

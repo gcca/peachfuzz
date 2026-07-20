@@ -3,6 +3,7 @@ const std = @import("std");
 const httplib = @import("httplib");
 const mustache = @import("mustache");
 const sqlite3 = @import("sqlite3");
+const peachfuzz = @import("peachfuzz");
 
 const accessly = @import("accessly.zig");
 const securing = @import("securing.zig");
@@ -168,6 +169,7 @@ pub fn renderSignIn(
     var data = mustache.Data.init(allocator);
     defer data.deinit();
 
+    data.setString("app_name", peachfuzz.conf.settings.appname);
     data.setBool("has_error", error_message != null);
     data.setString("error_message", error_message orelse "");
     data.setString("username", username);
@@ -190,6 +192,7 @@ pub fn renderO365SignIn(
     var data = mustache.Data.init(allocator);
     defer data.deinit();
 
+    data.setString("app_name", peachfuzz.conf.settings.appname);
     data.setBool("has_error", error_message != null);
     data.setString("error_message", toZ(allocator, error_message orelse ""));
     data.setBool("has_code", user_code != null);

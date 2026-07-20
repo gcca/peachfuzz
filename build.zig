@@ -108,6 +108,7 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "peachfuzz", .module = peachfuzz },
                 .{ .name = "httplib", .module = httplib },
+                .{ .name = "sqlite3", .module = sqlite3 },
             },
         }),
     });
