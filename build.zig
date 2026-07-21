@@ -10,6 +10,14 @@ fn linkCpp(module: *std.Build.Module, target: std.Build.ResolvedTarget) void {
     module.link_libcpp = true;
 }
 
+fn linkSqlite3(module: *std.Build.Module, target: std.Build.ResolvedTarget) void {
+    if (target.result.os.tag == .linux) {
+        module.addLibraryPath(.{ .cwd_relative = "/usr/lib" });
+        module.addSystemIncludePath(.{ .cwd_relative = "/usr/include" });
+    }
+    module.linkSystemLibrary("sqlite3", .{});
+}
+
 inline fn buildHttplib(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) *std.Build.Module {
     const httplib = b.addModule("httplib", .{
         .root_source_file = b.path("src/httplib.zig"),
@@ -56,7 +64,7 @@ inline fn buildSqlite3(b: *std.Build, target: std.Build.ResolvedTarget, optimize
     });
 
     sqlite3.link_libc = true;
-    sqlite3.linkSystemLibrary("sqlite3", .{});
+    linkSqlite3(sqlite3, target);
 
     return sqlite3;
 }
@@ -124,7 +132,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     cmd_datamark_clone.root_module.link_libc = true;
-    cmd_datamark_clone.root_module.linkSystemLibrary("sqlite3", .{});
+    linkSqlite3(cmd_datamark_clone.root_module, target);
     b.installArtifact(cmd_datamark_clone);
 
     const cmd_datamark_flush = b.addExecutable(.{
@@ -136,7 +144,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
     cmd_datamark_flush.root_module.link_libc = true;
-    cmd_datamark_flush.root_module.linkSystemLibrary("sqlite3", .{});
+    linkSqlite3(cmd_datamark_flush.root_module, target);
     cmd_datamark_flush.root_module.linkSystemLibrary("duckdb", .{});
     cmd_datamark_flush.root_module.addSystemIncludePath(.{ .cwd_relative = b.fmt("{s}/include", .{duckdb_prefix}) });
     cmd_datamark_flush.root_module.addLibraryPath(.{ .cwd_relative = b.fmt("{s}/lib", .{duckdb_prefix}) });
