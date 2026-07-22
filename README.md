@@ -22,8 +22,6 @@ http :8000/peachfuzz/healthcheck
 http :8000/peachfuzz/auth/signin
 ```
 
-Source metadata and credentials live in `datamark_source*` (app DB) and the env vars each CLI documents when missing. Page engines that import third-party packages need those packages available to the interpreter on `PATH` (or under `$VIRTUAL_ENV` if set).
-
 ---
 
 ## Overview

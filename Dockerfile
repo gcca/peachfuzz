@@ -1,15 +1,20 @@
 # syntax=docker/dockerfile:1.7
 
 ARG ALPINE_VERSION=3.23
+ARG PYTHON_VERSION=3.12
+ARG DEBIAN_CODENAME=bookworm
 ARG ZIG_VERSION=0.16.0
-ARG DUCKDB_VERSION=v1.5.4
+ARG DUCKDB_VERSION=1.5.4
 ARG DBMATE_IMAGE=ghcr.io/amacneil/dbmate:2.33.0
 
 FROM ${DBMATE_IMAGE} AS dbmate
 
-FROM alpine:${ALPINE_VERSION} AS target-deps
+FROM debian:${DEBIAN_CODENAME}-slim AS target-deps
 
-RUN apk add --no-cache sqlite-dev
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libsqlite3-dev \
+    && cp -L /usr/lib/*/libsqlite3.so /usr/local/lib/libsqlite3.so \
+    && rm -rf /var/lib/apt/lists/*
 
 FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS build
 
@@ -45,14 +50,14 @@ RUN case "${TARGETPLATFORM}" in \
     esac \
     && mkdir -p /usr/local/include \
     && curl -fsSL \
-       "https://github.com/duckdb/duckdb/releases/download/${DUCKDB_VERSION}/libduckdb-linux-${DUCKDB_ARCH}-musl.zip" \
+       "https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/libduckdb-linux-${DUCKDB_ARCH}.zip" \
        -o /tmp/libduckdb.zip \
     && unzip /tmp/libduckdb.zip -d /tmp/duckdb \
     && cp /tmp/duckdb/libduckdb.so /usr/local/lib/ \
     && cp /tmp/duckdb/duckdb.h /tmp/duckdb/duckdb.hpp /usr/local/include/ \
     && rm -rf /tmp/libduckdb.zip /tmp/duckdb
 
-COPY --from=target-deps /usr/lib/libsqlite3.so* /usr/lib/
+COPY --from=target-deps /usr/local/lib/libsqlite3.so /usr/lib/libsqlite3.so
 COPY --from=target-deps /usr/include/sqlite3.h /usr/include/sqlite3ext.h /usr/include/
 
 WORKDIR /src
@@ -66,20 +71,31 @@ RUN --mount=type=cache,id=peachfuzz-zig-global-${TARGETPLATFORM},target=/root/.c
     --mount=type=cache,id=peachfuzz-zig-local-${TARGETPLATFORM},target=/src/.zig-cache,sharing=locked \
     echo "Building with native $(uname -m) Zig for ${TARGETPLATFORM}" \
     && case "${TARGETPLATFORM}" in \
-        linux/amd64) ZIG_TARGET=x86_64-linux-musl ;; \
-        linux/arm64) ZIG_TARGET=aarch64-linux-musl ;; \
+        linux/amd64) ZIG_TARGET=x86_64-linux-gnu.2.36 ;; \
+        linux/arm64) ZIG_TARGET=aarch64-linux-gnu.2.36 ;; \
         *) echo "Unsupported target platform: ${TARGETPLATFORM}" >&2; exit 1 ;; \
     esac \
     && zig build -Doptimize=ReleaseFast -Dduckdb-prefix=/usr/local -Dtarget="${ZIG_TARGET}"
 
-FROM alpine:${ALPINE_VERSION} AS execute
+FROM python:${PYTHON_VERSION}-slim-${DEBIAN_CODENAME} AS execute
 
-RUN apk add --no-cache \
-    ca-certificates \
-    curl \
-    libstdc++ \
-    python3 \
-    sqlite-libs
+ARG DUCKDB_VERSION
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       ca-certificates \
+       curl \
+       libsqlite3-0 \
+       libstdc++6 \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m pip install \
+       --disable-pip-version-check \
+       --no-cache-dir \
+       --only-binary=:all: \
+       --root-user-action=ignore \
+       "duckdb==${DUCKDB_VERSION}" \
+    && python3 -c \
+       'import duckdb; assert duckdb.sql("SELECT 42").fetchone() == (42,)'
 
 WORKDIR /app
 
