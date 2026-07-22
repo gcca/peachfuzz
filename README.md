@@ -7,11 +7,10 @@ Web app for role-based dashboards and report pages. Users authenticate, land in 
 ## Quick start
 
 ```bash
-# 1. App database — migrate + sample fixture
-DATABASE_URL="sqlite:data/peachfuzz.db" dbmate up
-sqlite3 data/peachfuzz.db < db/fixtures/sample-data.sql
+# 1. App database
+dbmate -u sqlite:data/peachfuzz.db up
 
-# 2. Build & run (from repo root — paths are relative)
+# 2. Build & run
 zig build run
 # listens on 0.0.0.0:8000
 ```
@@ -21,18 +20,6 @@ Smoke checks:
 ```bash
 http :8000/peachfuzz/healthcheck
 http :8000/peachfuzz/auth/signin
-```
-
-Sample users (password `test` for all active accounts): `admin`, `jill`, `chris`, `barry`, `rebecca`, `albert.wesker`. After sign-in you are sent through `/peachfuzz/home` (role dispatcher) → currently only `analyst` has a shell (`/peachfuzz/analyst`).
-
-Optional datamark warehouse (business pages that query the warehouse file):
-
-```bash
-# cacheable sources → data/datamark/source/<name>/  (needs clone credentials)
-./zig-out/bin/peachfuzz-cmd_datamark-clone
-
-# load into data/datamark.db (cache on disk; remote sources direct — needs their credentials)
-./zig-out/bin/peachfuzz-cmd_datamark-flush
 ```
 
 Source metadata and credentials live in `datamark_source*` (app DB) and the env vars each CLI documents when missing. Page engines that import third-party packages need those packages available to the interpreter on `PATH` (or under `$VIRTUAL_ENV` if set).

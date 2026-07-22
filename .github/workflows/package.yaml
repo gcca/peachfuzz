@@ -20,6 +20,11 @@ jobs:
         shell: bash
         run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -37,6 +42,5 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ env.IMAGE_NAME }}:latest
-          build-args: DEPS_IMAGE=ghcr.io/${{ github.repository_owner }}/peachfuzz-deps:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -5,7 +5,7 @@ primary_region = 'ord'
   image = 'ghcr.io/gcca/peachfuzz:latest'
 
 [env]
-  DB_URL = '/app/data/peachfuzz.db'
+  DBPATH = '/app/data/peachfuzz.db'
   TZ = 'UTC'
 
 [[mounts]]

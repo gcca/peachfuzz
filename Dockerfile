@@ -1,26 +1,59 @@
 # syntax=docker/dockerfile:1.7
 
 ARG ALPINE_VERSION=3.23
-ARG DEPS_IMAGE=ghcr.io/gcca/peachfuzz-deps:latest
+ARG ZIG_VERSION=0.16.0
+ARG DUCKDB_VERSION=v1.5.4
 ARG DBMATE_IMAGE=ghcr.io/amacneil/dbmate:2.33.0
 
 FROM ${DBMATE_IMAGE} AS dbmate
 
-# Native-arch toolchain: this stage actually executes (zig build runs here),
-# so it must match the build host, not the final image target. Running a
-# target-arch zig under emulation crashes on Apple Silicon build hosts either
-# way: SIGSEGV under qemu-user, "bss_size overflow" under Rosetta.
-FROM --platform=$BUILDPLATFORM ${DEPS_IMAGE} AS deps
+FROM alpine:${ALPINE_VERSION} AS target-deps
 
-# Target-arch artifact source: never executed, only used to harvest
-# target-arch duckdb/sqlite3 libraries for cross-linking. Zig cross-compiles
-# its own libc/libc++ for any -Dtarget, but duckdb/sqlite3 are prebuilt/system
-# libraries that must match the OUTPUT architecture, not the build host.
-FROM --platform=$TARGETPLATFORM ${DEPS_IMAGE} AS deps-target
+RUN apk add --no-cache sqlite-dev
 
-FROM deps AS build
+FROM --platform=$BUILDPLATFORM alpine:${ALPINE_VERSION} AS build
 
-ARG TARGETARCH
+ARG ZIG_VERSION
+ARG DUCKDB_VERSION
+ARG TARGETPLATFORM
+
+RUN apk add --no-cache \
+    build-base \
+    ca-certificates \
+    curl \
+    libstdc++ \
+    tar \
+    unzip \
+    xz
+
+RUN case "$(uname -m)" in \
+        x86_64) ZIG_ARCH=x86_64 ;; \
+        aarch64 | arm64) ZIG_ARCH=aarch64 ;; \
+        *) echo "Unsupported build architecture: $(uname -m)" >&2; exit 1 ;; \
+    esac \
+    && mkdir -p /opt/zig \
+    && curl -fsSL \
+       "https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_ARCH}-linux-${ZIG_VERSION}.tar.xz" \
+       | tar -xJ -C /opt/zig --strip-components=1
+
+ENV PATH="/opt/zig:${PATH}"
+
+RUN case "${TARGETPLATFORM}" in \
+        linux/amd64) DUCKDB_ARCH=amd64 ;; \
+        linux/arm64) DUCKDB_ARCH=arm64 ;; \
+        *) echo "Unsupported target platform: ${TARGETPLATFORM}" >&2; exit 1 ;; \
+    esac \
+    && mkdir -p /usr/local/include \
+    && curl -fsSL \
+       "https://github.com/duckdb/duckdb/releases/download/${DUCKDB_VERSION}/libduckdb-linux-${DUCKDB_ARCH}-musl.zip" \
+       -o /tmp/libduckdb.zip \
+    && unzip /tmp/libduckdb.zip -d /tmp/duckdb \
+    && cp /tmp/duckdb/libduckdb.so /usr/local/lib/ \
+    && cp /tmp/duckdb/duckdb.h /tmp/duckdb/duckdb.hpp /usr/local/include/ \
+    && rm -rf /tmp/libduckdb.zip /tmp/duckdb
+
+COPY --from=target-deps /usr/lib/libsqlite3.so* /usr/lib/
+COPY --from=target-deps /usr/include/sqlite3.h /usr/include/sqlite3ext.h /usr/include/
 
 WORKDIR /src
 
@@ -28,17 +61,14 @@ COPY build.zig build.zig.zon ./
 COPY 3rdparty ./3rdparty
 COPY src ./src
 COPY cmd ./cmd
-COPY db ./db
 
-COPY --from=deps-target /usr/local/lib/libduckdb.so /usr/local/lib/libduckdb.so
-COPY --from=deps-target /usr/local/include/duckdb.h /usr/local/include/duckdb.hpp /usr/local/include/
-COPY --from=deps-target /usr/lib/libsqlite3.so* /usr/lib/
-COPY --from=deps-target /usr/include/sqlite3.h /usr/include/sqlite3ext.h /usr/include/
-
-RUN case "${TARGETARCH}" in \
-        amd64) ZIG_TARGET=x86_64-linux-musl ;; \
-        arm64) ZIG_TARGET=aarch64-linux-musl ;; \
-        *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
+RUN --mount=type=cache,id=peachfuzz-zig-global-${TARGETPLATFORM},target=/root/.cache/zig,sharing=locked \
+    --mount=type=cache,id=peachfuzz-zig-local-${TARGETPLATFORM},target=/src/.zig-cache,sharing=locked \
+    echo "Building with native $(uname -m) Zig for ${TARGETPLATFORM}" \
+    && case "${TARGETPLATFORM}" in \
+        linux/amd64) ZIG_TARGET=x86_64-linux-musl ;; \
+        linux/arm64) ZIG_TARGET=aarch64-linux-musl ;; \
+        *) echo "Unsupported target platform: ${TARGETPLATFORM}" >&2; exit 1 ;; \
     esac \
     && zig build -Doptimize=ReleaseFast -Dduckdb-prefix=/usr/local -Dtarget="${ZIG_TARGET}"
 
@@ -49,7 +79,6 @@ RUN apk add --no-cache \
     curl \
     libstdc++ \
     python3 \
-    sqlite \
     sqlite-libs
 
 WORKDIR /app
@@ -58,16 +87,11 @@ COPY --from=build /src/zig-out/bin/ /usr/local/bin/
 COPY --from=build /usr/local/lib/libduckdb.so /usr/local/lib/libduckdb.so
 COPY --from=dbmate /usr/local/bin/dbmate /usr/local/bin/dbmate
 COPY db/migrations/*.sql /app/migrations/
-COPY db/fixtures/*.sql /app/fixtures/
-COPY docker-entrypoint.sh /usr/local/bin/peachfuzz-entrypoint
-
-RUN chmod +x /usr/local/bin/peachfuzz-entrypoint \
-    && mkdir -p /app/data
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/peachfuzz-entrypoint
 
 ENV LD_LIBRARY_PATH=/usr/local/lib \
     TZ=UTC \
-    DB_URL=/app/data/peachfuzz.db \
-    LOAD_SAMPLE_DATA=0
+    DBPATH=/app/data/peachfuzz.db
 
 EXPOSE 8000
 
