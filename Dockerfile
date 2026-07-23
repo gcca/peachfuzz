@@ -2,7 +2,7 @@
 
 ARG ALPINE_VERSION=3.23
 ARG PYTHON_VERSION=3.12
-ARG DEBIAN_CODENAME=bookworm
+ARG DEBIAN_CODENAME=trixie
 ARG ZIG_VERSION=0.16.0
 ARG DUCKDB_VERSION=1.5.4
 ARG DBMATE_IMAGE=ghcr.io/amacneil/dbmate:2.33.0
@@ -71,8 +71,8 @@ RUN --mount=type=cache,id=peachfuzz-zig-global-${TARGETPLATFORM},target=/root/.c
     --mount=type=cache,id=peachfuzz-zig-local-${TARGETPLATFORM},target=/src/.zig-cache,sharing=locked \
     echo "Building with native $(uname -m) Zig for ${TARGETPLATFORM}" \
     && case "${TARGETPLATFORM}" in \
-        linux/amd64) ZIG_TARGET=x86_64-linux-gnu.2.36 ;; \
-        linux/arm64) ZIG_TARGET=aarch64-linux-gnu.2.36 ;; \
+        linux/amd64) ZIG_TARGET=x86_64-linux-gnu.2.41 ;; \
+        linux/arm64) ZIG_TARGET=aarch64-linux-gnu.2.41 ;; \
         *) echo "Unsupported target platform: ${TARGETPLATFORM}" >&2; exit 1 ;; \
     esac \
     && zig build -Doptimize=ReleaseFast -Dduckdb-prefix=/usr/local -Dtarget="${ZIG_TARGET}"
