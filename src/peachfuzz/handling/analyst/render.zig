@@ -120,6 +120,9 @@ fn appendPageFolder(
 
     var data = mustache.Data.init(allocator);
     defer data.deinit();
+    const key = std.fmt.allocPrintSentinel(allocator, "{d}", .{folder.key}, 0) catch @panic("OOM");
+    defer allocator.free(key);
+    data.setString("key", key);
     data.setString("name", folder.name);
     data.setString("description", folder.description);
     data.setString("children", children_z);

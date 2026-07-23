@@ -88,9 +88,39 @@
         });
       }
 
+      function initPageTree() {
+        const storageKey = 'page-tree-state';
+        let savedState = {};
+        try {
+          const parsedState = JSON.parse(localStorage.getItem(storageKey) || '{}');
+          if (parsedState && typeof parsedState === 'object' && !Array.isArray(parsedState)) {
+            savedState = parsedState;
+          }
+        } catch (error) {
+          savedState = {};
+        }
+
+        const state = {};
+        function persistState() {
+          localStorage.setItem(storageKey, JSON.stringify(state));
+        }
+
+        document.querySelectorAll('[data-page-folder-key]').forEach(function(folder) {
+          const key = folder.dataset.pageFolderKey;
+          state[key] = savedState[key] === true;
+          folder.open = state[key];
+          folder.addEventListener('toggle', function() {
+            state[key] = folder.open;
+            persistState();
+          });
+        });
+        persistState();
+      }
+
       document.addEventListener('DOMContentLoaded', function() {
         setTheme(localStorage.getItem('theme') || 'cmyk');
         initSidebarResize();
+        initPageTree();
       });
     </script>
   </head>
