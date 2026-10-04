@@ -28,7 +28,7 @@ pub fn homeGet(req: httplib.Request, res: httplib.Response) void {
 
 fn currentUser(allocator: std.mem.Allocator, req: httplib.Request) ?session.User {
     const token = req.cookie("session") orelse return null;
-    const token_z = allocator.dupeZ(u8, token) catch return null;
+    const token_z = allocator.dupeSentinel(u8, token, 0) catch return null;
 
     var db = sqlite3.initRO(session.dbPath) catch return null;
     defer db.deinit();

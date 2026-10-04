@@ -95,7 +95,7 @@ pub fn currentUser(
     const step = stmt.step() catch return LogInError.DatabaseError;
     if (step == .done) return null;
 
-    const username = allocator.dupeZ(u8, stmt.columnText(0)) catch return LogInError.DatabaseError;
+    const username = allocator.dupeSentinel(u8, stmt.columnText(0), 0) catch return LogInError.DatabaseError;
     const role = accessly.roleFromInt(stmt.columnInt(1)) orelse return LogInError.DatabaseError;
     return .{ .username = username, .role = role };
 }

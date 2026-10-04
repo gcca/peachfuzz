@@ -1,8 +1,6 @@
 const std = @import("std");
 
-const c = @cImport({
-    @cInclude("mustacheshim.hpp");
-});
+const c = @import("c");
 
 const RenderCtx = struct {
     allocator: std.mem.Allocator,

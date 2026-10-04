@@ -15,7 +15,7 @@ pub const home_path = "/peachfuzz/home";
 
 pub fn hasSession(allocator: std.mem.Allocator, req: httplib.Request) bool {
     const token = req.cookie("session") orelse return false;
-    const token_z = allocator.dupeZ(u8, token) catch return false;
+    const token_z = allocator.dupeSentinel(u8, token, 0) catch return false;
 
     var db = sqlite3.initRO(session.dbPath) catch return false;
     defer db.deinit();
@@ -147,7 +147,7 @@ pub fn sessionCookie(token: [:0]const u8, max_age_s: i64) httplib.Cookie {
 }
 
 fn toZ(allocator: std.mem.Allocator, s: []const u8) [:0]const u8 {
-    return allocator.dupeZ(u8, s) catch "";
+    return allocator.dupeSentinel(u8, s, 0) catch "";
 }
 
 pub fn renderSignIn(

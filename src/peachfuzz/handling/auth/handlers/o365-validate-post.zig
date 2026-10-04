@@ -81,7 +81,7 @@ pub fn o365ValidatePost(req: httplib.Request, res: httplib.Response) void {
         return;
     };
 
-    const username_z = allocator.dupeZ(u8, username) catch {
+    const username_z = allocator.dupeSentinel(u8, username, 0) catch {
         res.set_content("{\"status\":\"error\",\"message\":\"Could not create your account\"}", "application/json");
         return;
     };

@@ -12,7 +12,7 @@ pub fn signOut(req: httplib.Request, res: httplib.Response) void {
     const allocator = arena.allocator();
 
     if (req.cookie("session")) |token| blk: {
-        const token_z = allocator.dupeZ(u8, token) catch break :blk;
+        const token_z = allocator.dupeSentinel(u8, token, 0) catch break :blk;
         var db = sqlite3.initRW(session.dbPath) catch break :blk;
         defer db.deinit();
         session.revokeSession(&db, token_z) catch {};

@@ -73,14 +73,14 @@ fn avatarInitials(allocator: std.mem.Allocator, username: []const u8) [:0]const 
     var n = fillAvatarInitials(username, &buf);
     if (n == 0) n = fillAvatarInitials(peachfuzz.conf.settings.appname, &buf);
     if (n == 0) return "";
-    return allocator.dupeZ(u8, buf[0..n]) catch "";
+    return allocator.dupeSentinel(u8, buf[0..n], 0) catch "";
 }
 
 pub const CurrentUser = peachfuzz.handling.auth.session.User;
 
 pub fn currentUser(allocator: std.mem.Allocator, req: httplib.Request) ?CurrentUser {
     const token = req.cookie("session") orelse return null;
-    const token_z = allocator.dupeZ(u8, token) catch return null;
+    const token_z = allocator.dupeSentinel(u8, token, 0) catch return null;
 
     var db = sqlite3.initRO(dbPath) catch return null;
     defer db.deinit();
@@ -163,8 +163,8 @@ fn renderPageTree(allocator: std.mem.Allocator) [:0]const u8 {
 
             folders.append(allocator, .{
                 .key = stmt.columnInt(0),
-                .name = allocator.dupeZ(u8, stmt.columnText(1)) catch @panic("OOM"),
-                .description = allocator.dupeZ(u8, stmt.columnText(2)) catch @panic("OOM"),
+                .name = allocator.dupeSentinel(u8, stmt.columnText(1), 0) catch @panic("OOM"),
+                .description = allocator.dupeSentinel(u8, stmt.columnText(2), 0) catch @panic("OOM"),
                 .parent = if (stmt.columnInt(4) != 0) null else stmt.columnInt(3),
             }) catch @panic("OOM");
         }
@@ -181,9 +181,9 @@ fn renderPageTree(allocator: std.mem.Allocator) [:0]const u8 {
             if (step == .done) break;
 
             links.append(allocator, .{
-                .name = allocator.dupeZ(u8, stmt.columnText(0)) catch @panic("OOM"),
-                .title = allocator.dupeZ(u8, stmt.columnText(1)) catch @panic("OOM"),
-                .description = allocator.dupeZ(u8, stmt.columnText(2)) catch @panic("OOM"),
+                .name = allocator.dupeSentinel(u8, stmt.columnText(0), 0) catch @panic("OOM"),
+                .title = allocator.dupeSentinel(u8, stmt.columnText(1), 0) catch @panic("OOM"),
+                .description = allocator.dupeSentinel(u8, stmt.columnText(2), 0) catch @panic("OOM"),
                 .folder = if (stmt.columnInt(4) != 0) null else stmt.columnInt(3),
             }) catch @panic("OOM");
         }
@@ -248,8 +248,8 @@ fn renderDashboardAreas(allocator: std.mem.Allocator, db: *sqlite3.Sqlite3) [:0]
 
         var data = mustache.Data.init(allocator);
         defer data.deinit();
-        const name = allocator.dupeZ(u8, stmt.columnText(0)) catch @panic("OOM");
-        const description = allocator.dupeZ(u8, stmt.columnText(1)) catch @panic("OOM");
+        const name = allocator.dupeSentinel(u8, stmt.columnText(0), 0) catch @panic("OOM");
+        const description = allocator.dupeSentinel(u8, stmt.columnText(1), 0) catch @panic("OOM");
         const count = std.fmt.allocPrintSentinel(allocator, "{d}", .{stmt.columnInt(2)}, 0) catch @panic("OOM");
         data.setString("name", name);
         data.setString("description", description);
@@ -302,11 +302,11 @@ fn renderDashboardReports(allocator: std.mem.Allocator, db: *sqlite3.Sqlite3) [:
 
         var data = mustache.Data.init(allocator);
         defer data.deinit();
-        const name = allocator.dupeZ(u8, stmt.columnText(0)) catch @panic("OOM");
-        const title = allocator.dupeZ(u8, stmt.columnText(1)) catch @panic("OOM");
-        const description = allocator.dupeZ(u8, stmt.columnText(2)) catch @panic("OOM");
-        const path = allocator.dupeZ(u8, stmt.columnText(3)) catch @panic("OOM");
-        const root_name = allocator.dupeZ(u8, stmt.columnText(4)) catch @panic("OOM");
+        const name = allocator.dupeSentinel(u8, stmt.columnText(0), 0) catch @panic("OOM");
+        const title = allocator.dupeSentinel(u8, stmt.columnText(1), 0) catch @panic("OOM");
+        const description = allocator.dupeSentinel(u8, stmt.columnText(2), 0) catch @panic("OOM");
+        const path = allocator.dupeSentinel(u8, stmt.columnText(3), 0) catch @panic("OOM");
+        const root_name = allocator.dupeSentinel(u8, stmt.columnText(4), 0) catch @panic("OOM");
         const search = std.fmt.allocPrintSentinel(allocator, "{s} {s} {s}", .{ title, description, path }, 0) catch @panic("OOM");
         data.setString("name", name);
         data.setString("title", title);
@@ -369,7 +369,7 @@ pub fn renderAnalyst(allocator: std.mem.Allocator, page: ?Page, user: ?CurrentUs
     data.setString("username", if (user) |u| u.username else "");
     data.setString("avatar_initials", avatarInitials(allocator, if (user) |u| u.username else peachfuzz.conf.settings.appname));
     const role_label: [:0]const u8 = if (user) |u|
-        (allocator.dupeZ(u8, peachfuzz.handling.auth.accessly.roleLabel(u.role)) catch "")
+        (allocator.dupeSentinel(u8, peachfuzz.handling.auth.accessly.roleLabel(u.role), 0) catch "")
     else
         "";
     data.setString("role", role_label);

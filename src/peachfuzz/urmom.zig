@@ -32,17 +32,17 @@ pub const AuthClient = struct {
     }
 
     pub fn UserInfo(self: AuthClient, request: UserInfoRequest) !UserInfoResponse {
-        const username = try self.allocator.dupeZ(u8, request.username);
+        const username = try self.allocator.dupeSentinel(u8, request.username, 0);
         defer self.allocator.free(username);
 
         return self.client.userInfo(self.allocator, username);
     }
 
     pub fn Authenticate(self: AuthClient, request: AuthenticateRequest) !AuthenticateResponse {
-        const username = try self.allocator.dupeZ(u8, request.username);
+        const username = try self.allocator.dupeSentinel(u8, request.username, 0);
         defer self.allocator.free(username);
 
-        const password = try self.allocator.dupeZ(u8, request.password);
+        const password = try self.allocator.dupeSentinel(u8, request.password, 0);
         defer self.allocator.free(password);
 
         return self.client.authenticate(self.allocator, username, password);

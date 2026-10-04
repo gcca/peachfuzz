@@ -1,8 +1,6 @@
 const std = @import("std");
 
-const c = @cImport({
-    @cInclude("httplibshim.hpp");
-});
+const c = @import("c");
 
 pub const Request = struct {
     handle: *const c.Request,

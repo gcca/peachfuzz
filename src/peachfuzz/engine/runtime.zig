@@ -1,8 +1,6 @@
 const std = @import("std");
 
-const c = @cImport({
-    @cInclude("backend.hpp");
-});
+const c = @import("c");
 
 pub const Engine = enum(i64) {
     native = 0,
@@ -31,7 +29,7 @@ fn RunPython(allocator: std.mem.Allocator, body: [:0]const u8, args: []const [:0
     const args_ptr: [*c]const [*c]const u8 = if (args.len == 0) null else c_args.ptr;
     const ptr = c.engine_python_run(body.ptr, args_ptr, args.len) orelse return "";
     defer c.engine_python_free(ptr);
-    return allocator.dupeZ(u8, std.mem.span(ptr)) catch "";
+    return allocator.dupeSentinel(u8, std.mem.span(ptr), 0) catch "";
 }
 
 fn RunXa6(allocator: std.mem.Allocator, body: [:0]const u8, args: []const [:0]const u8) [:0]const u8 {
@@ -51,7 +49,7 @@ fn RunXa6(allocator: std.mem.Allocator, body: [:0]const u8, args: []const [:0]co
     const args_ptr: [*c]const [*c]const u8 = if (mapped.len == 0) null else c_args.ptr;
     const ptr = c.engine_xa6_run(body.ptr, args_ptr, mapped.len) orelse return "";
     defer c.engine_xa6_free(ptr);
-    return allocator.dupeZ(u8, std.mem.span(ptr)) catch "";
+    return allocator.dupeSentinel(u8, std.mem.span(ptr), 0) catch "";
 }
 
 const EngineMap = std.EnumArray(Engine, EngineFn).init(.{
@@ -65,8 +63,9 @@ const EngineMap = std.EnumArray(Engine, EngineFn).init(.{
 });
 
 fn engineFromId(engine_id: i64) ?Engine {
-    inline for (std.meta.fields(Engine)) |field| {
-        if (field.value == engine_id) return @enumFromInt(engine_id);
+    const info = @typeInfo(Engine).@"enum";
+    inline for (info.field_values) |value| {
+        if (value == engine_id) return @enumFromInt(engine_id);
     }
     return null;
 }

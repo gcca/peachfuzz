@@ -47,9 +47,9 @@ pub fn pageGet(req: httplib.Request, res: httplib.Response) void {
         return;
     }
 
-    const title = allocator.dupeZ(u8, stmt.columnText(0)) catch @panic("OOM");
+    const title = allocator.dupeSentinel(u8, stmt.columnText(0), 0) catch @panic("OOM");
     const engine_id = stmt.columnInt(1);
-    const body = allocator.dupeZ(u8, stmt.columnText(2)) catch @panic("OOM");
+    const body = allocator.dupeSentinel(u8, stmt.columnText(2), 0) catch @panic("OOM");
 
     var args: std.ArrayList([:0]const u8) = .empty;
     var i: usize = 0;

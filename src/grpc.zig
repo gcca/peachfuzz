@@ -1,8 +1,6 @@
 const std = @import("std");
 
-const c = @cImport({
-    @cInclude("grpcshim.hpp");
-});
+const c = @import("c");
 
 const timeout_ms: c_int = 5000;
 
