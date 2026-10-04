@@ -213,19 +213,6 @@ fn renderPageTree(allocator: std.mem.Allocator) [:0]const u8 {
     return html.toOwnedSliceSentinel(allocator, 0) catch "";
 }
 
-const DashboardStats = struct {
-    reports: i64 = 0,
-    areas: i64 = 0,
-    sources: i64 = 0,
-};
-
-fn queryCount(db: *sqlite3.Sqlite3, sql: [:0]const u8) i64 {
-    var stmt = db.stmt(sql) catch return 0;
-    defer stmt.deinit();
-    if ((stmt.step() catch return 0) == .done) return 0;
-    return stmt.columnInt(0);
-}
-
 fn renderDashboardAreas(allocator: std.mem.Allocator, db: *sqlite3.Sqlite3) [:0]const u8 {
     var tmpl = mustache.Mustache.init(allocator, dashboardAreaTmpl);
     defer tmpl.deinit();
@@ -340,19 +327,13 @@ fn renderDashboardReports(allocator: std.mem.Allocator, db: *sqlite3.Sqlite3) [:
 fn renderDashboardData(allocator: std.mem.Allocator) struct {
     areas: [:0]const u8,
     reports: [:0]const u8,
-    stats: DashboardStats,
 } {
-    var db = sqlite3.initRO(dbPath) catch return .{ .areas = "", .reports = "", .stats = .{} };
+    var db = sqlite3.initRO(dbPath) catch return .{ .areas = "", .reports = "" };
     defer db.deinit();
 
     return .{
         .areas = renderDashboardAreas(allocator, &db),
         .reports = renderDashboardReports(allocator, &db),
-        .stats = .{
-            .reports = queryCount(&db, "SELECT COUNT(*) FROM pages_view"),
-            .areas = queryCount(&db, "SELECT COUNT(DISTINCT name) FROM pages_folder WHERE parent IS NULL"),
-            .sources = queryCount(&db, "SELECT COUNT(*) FROM datamark_source"),
-        },
     };
 }
 
@@ -367,12 +348,6 @@ pub fn renderAnalystContent(allocator: std.mem.Allocator, page: ?Page) [:0]u8 {
     data.setString("app_name", peachfuzz.conf.settings.appname);
     data.setString("area_cards", if (dashboard) |value| value.areas else "");
     data.setString("report_rows", if (dashboard) |value| value.reports else "");
-    const report_count = std.fmt.allocPrintSentinel(allocator, "{d}", .{if (dashboard) |value| value.stats.reports else 0}, 0) catch @panic("OOM");
-    const area_count = std.fmt.allocPrintSentinel(allocator, "{d}", .{if (dashboard) |value| value.stats.areas else 0}, 0) catch @panic("OOM");
-    const source_count = std.fmt.allocPrintSentinel(allocator, "{d}", .{if (dashboard) |value| value.stats.sources else 0}, 0) catch @panic("OOM");
-    data.setString("report_count", report_count);
-    data.setString("area_count", area_count);
-    data.setString("source_count", source_count);
     data.setBool("is_page", page != null);
     data.setString("page_title", if (page) |p| p.title else "");
     data.setString("page_content", if (page) |p| p.content else "");
